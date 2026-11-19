@@ -46,6 +46,11 @@ export class RegisterComponent implements OnInit {
     private readonly ngZone: NgZone) { }
 
   ngOnInit () {
+    // Added subscription to an event to handle the changing state of the "repeat password" control
+    this.passwordControl.valueChanges.subscribe(() => {
+      this.repeatPasswordControl.updateValueAndValidity()
+    })
+
     this.securityQuestionService.find(null).subscribe((securityQuestions: any) => {
       this.securityQuestions = securityQuestions
     }, (err) => { console.log(err) })
