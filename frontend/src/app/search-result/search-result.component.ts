@@ -59,7 +59,6 @@ export class SearchResultComponent implements OnDestroy, AfterViewInit {
     private readonly router: Router, private readonly route: ActivatedRoute, private readonly sanitizer: DomSanitizer, private readonly ngZone: NgZone, private readonly io: SocketIoService,
     private readonly snackBarHelperService: SnackBarHelperService, private readonly cdRef: ChangeDetectorRef) { }
 
-  // vuln-code-snippet start restfulXssChallenge
   ngAfterViewInit () {
     const products = this.productService.search('')
     const quantities = this.quantityService.getAll()
