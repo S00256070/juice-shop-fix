@@ -12,23 +12,34 @@ import * as utils from '../lib/utils'
 import { challenges } from '../data/datacache'
 const security = require('../lib/insecurity')
 
-module.exports = function retrieveBasket () {
+module.exports = function retrieveBasket() {
   return (req: Request, res: Response, next: NextFunction) => {
+    // constants
     const id = req.params.id
-    BasketModel.findOne({ where: { id }, include: [{ model: ProductModel, paranoid: false, as: 'Products' }] })
+    const user = security.authenticatedUsers.from(req)
+    // check if user is authenticated
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    // check if user is authorized to access the basket
+    BasketModel.findOne({
+      where: {
+        id: req.params.id,
+        UserId: user.data.id
+      },
+      include: [{
+        model: ProductModel,
+        paranoid: false,
+        as: 'Products'
+      }]
+    })
+    // check if basket exists and return it
       .then((basket: BasketModel | null) => {
-        /* jshint eqeqeq:false */
-        challengeUtils.solveIf(challenges.basketAccessChallenge, () => {
-          const user = security.authenticatedUsers.from(req)
-          return user && id && id !== 'undefined' && id !== 'null' && id !== 'NaN' && user.bid && user.bid != id // eslint-disable-line eqeqeq
-        })
-        if (((basket?.Products) != null) && basket.Products.length > 0) {
-          for (let i = 0; i < basket.Products.length; i++) {
-            basket.Products[i].name = req.__(basket.Products[i].name)
-          }
+        if (basket == null) {
+          return res.status(404).json({ error: 'Basket not found' })
         }
-
         res.json(utils.queryResultToJson(basket))
+    // error handling
       }).catch((error: Error) => {
         next(error)
       })
