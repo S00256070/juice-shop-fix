@@ -224,4 +224,15 @@ describe('insecurity', () => {
       expect(security.hmac('')).to.equal('f052179ec5894a2e79befa8060cfcb517f1e14f7f6222af854377b6481ae953e')
     })
   })
+
+  describe('pseudonymizeEmail', () => {
+    it('returns a versioned HMAC pseudonym instead of a reversible vowel mask', () => {
+      const pseudonym = security.pseudonymizeEmail('  Test.User@Example.COM  ')
+
+      expect(pseudonym).to.match(/^v1:[a-f0-9]{64}$/)
+      expect(pseudonym).to.equal(security.pseudonymizeEmail('test.user@example.com'))
+      expect(pseudonym).not.to.contain('example')
+      expect(pseudonym).not.to.equal(security.pseudonymizeEmail('other.user@example.com'))
+    })
+  })
 })

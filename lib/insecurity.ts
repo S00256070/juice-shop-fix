@@ -43,6 +43,12 @@ interface IAuthenticatedUsers {
 export const hash = (data: string) => crypto.createHash('sha256').update(data).digest('hex')
 export const hmac = (data: string) => crypto.createHmac('sha256', 'pa4qacea4VK9t9nGv7yZtwmj').update(data).digest('hex')
 
+export const pseudonymizeEmail = (email: string) => {
+  const canonicalEmail = email.trim().normalize('NFKC').toLowerCase()
+  const key = process.env.JUICE_SHOP_ORDER_PSEUDONYM_KEY || 'juice-shop-development-only-order-pseudonym-key'
+  return 'v1:' + crypto.createHmac('sha256', key).update(canonicalEmail).digest('hex')
+}
+
 export const cutOffPoisonNullByte = (str: string) => {
   const nullByte = '%00'
   if (utils.contains(str, nullByte)) {
