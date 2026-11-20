@@ -379,14 +379,20 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.post('/api/Feedbacks', verify.captchaBypassChallenge())
   /* User registration challenge verifications before finale takes over */
   app.post('/api/Users', (req: Request, res: Response, next: NextFunction) => {
-    if (req.body.email !== undefined && req.body.password !== undefined && req.body.passwordRepeat !== undefined) {
-      if (req.body.email.length !== 0 && req.body.password.length !== 0) {
-        req.body.email = req.body.email.trim()
-        req.body.password = req.body.password.trim()
+    if (typeof req.body.password !== 'string') {
+      return res.status(400).json({ errors: [{ message: 'Password must be 15-64 characters long.' }] })
+    }
+    req.body.password = req.body.password.trim()
+    if (req.body.password.length < 15 || req.body.password.length > 64) {
+      return res.status(400).json({ errors: [{ message: 'Password must be 15-64 characters long.' }] })
+    }
+    if (req.body.email !== undefined && req.body.email.length !== 0) {
+      req.body.email = req.body.email.trim()
+      if (typeof req.body.passwordRepeat === 'string') {
         req.body.passwordRepeat = req.body.passwordRepeat.trim()
-      } else {
-        res.status(400).send(res.__('Invalid email/password cannot be empty'))
       }
+    } else if (req.body.email !== undefined) {
+      return res.status(400).send(res.__('Invalid email/password cannot be empty'))
     }
     next()
   })
