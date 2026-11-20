@@ -16,7 +16,7 @@ interface RequestWithRawBody extends Request {
   rawBody: string
 }
 
-module.exports.addBasketItem = function addBasketItem () {
+module.exports.addBasketItem = function addBasketItem() {
   return (req: RequestWithRawBody, res: Response, next: NextFunction) => {
     const result = utils.parseJsonCustom(req.rawBody)
     const productIds = []
@@ -54,19 +54,31 @@ module.exports.addBasketItem = function addBasketItem () {
   }
 }
 
-module.exports.quantityCheckBeforeBasketItemAddition = function quantityCheckBeforeBasketItemAddition () {
+module.exports.quantityCheckBeforeBasketItemAddition = function quantityCheckBeforeBasketItemAddition() {
   return (req: Request, res: Response, next: NextFunction) => {
+
+    if (!Number.isInteger(req.body.quantity) || req.body.quantity < 1) {
+      res.status(400).json({ error: 'Quantity must be a positive integer.' })
+      return
+    }
+
     void quantityCheck(req, res, next, req.body.ProductId, req.body.quantity).catch((error: Error) => {
       next(error)
     })
   }
 }
 
-module.exports.quantityCheckBeforeBasketItemUpdate = function quantityCheckBeforeBasketItemUpdate () {
+module.exports.quantityCheckBeforeBasketItemUpdate = function quantityCheckBeforeBasketItemUpdate() {
   return (req: Request, res: Response, next: NextFunction) => {
     BasketItemModel.findOne({ where: { id: req.params.id } }).then((item: BasketItemModel | null) => {
       const user = security.authenticatedUsers.from(req)
       challengeUtils.solveIf(challenges.basketManipulateChallenge, () => { return user && req.body.BasketId && user.bid != req.body.BasketId }) // eslint-disable-line eqeqeq
+
+      if (!Number.isInteger(req.body.quantity) || req.body.quantity < 1) {
+        res.status(400).json({ error: 'Quantity must be a positive integer.' })
+        return
+      }
+
       if (req.body.quantity) {
         if (item == null) {
           throw new Error('No such item found!')
@@ -81,10 +93,15 @@ module.exports.quantityCheckBeforeBasketItemUpdate = function quantityCheckBefor
   }
 }
 
-async function quantityCheck (req: Request, res: Response, next: NextFunction, id: number, quantity: number) {
+async function quantityCheck(req: Request, res: Response, next: NextFunction, id: number, quantity: number) {
   const product = await QuantityModel.findOne({ where: { ProductId: id } })
   if (product == null) {
     throw new Error('No such product found!')
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    res.status(400).json({ error: 'Quantity must be a positive integer.' })
+    return
   }
 
   // is product limited per user and order, except if user is deluxe?

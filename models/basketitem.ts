@@ -37,7 +37,13 @@ const BasketItemModelInit = (sequelize: Sequelize) => {
         primaryKey: true,
         autoIncrement: true
       },
-      quantity: DataTypes.INTEGER
+      // Ensure that quantity is a positive integer
+      quantity: {
+        type: DataTypes.INTEGER,
+         validate: {
+          min: 1
+        }
+      }
     },
     {
       tableName: 'BasketItems',

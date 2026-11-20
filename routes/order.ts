@@ -30,7 +30,7 @@ interface Product {
   bonus: number
 }
 
-module.exports = function placeOrder () {
+module.exports = function placeOrder() {
   return (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.id
     BasketModel.findOne({ where: { id }, include: [{ model: ProductModel, paranoid: false, as: 'Products' }] })
@@ -67,6 +67,11 @@ module.exports = function placeOrder () {
           let totalPoints = 0
           basket.Products?.forEach(({ BasketItem, price, deluxePrice, name, id }) => {
             if (BasketItem != null) {
+              // Validate quantity before proceeding
+              if (!Number.isInteger(BasketItem.quantity) || BasketItem.quantity < 1) {
+                res.status(400).json({ error: 'Quantity must be a positive integer.' })
+                return
+              }
               challengeUtils.solveIf(challenges.christmasSpecialChallenge, () => { return BasketItem.ProductId === products.christmasSpecial.id })
               QuantityModel.findOne({ where: { ProductId: BasketItem.ProductId } }).then((product: any) => {
                 const newQuantity = product.quantity - BasketItem.quantity
@@ -175,7 +180,7 @@ module.exports = function placeOrder () {
   }
 }
 
-function calculateApplicableDiscount (basket: BasketModel, req: Request) {
+function calculateApplicableDiscount(basket: BasketModel, req: Request) {
   if (security.discountFromCoupon(basket.coupon)) {
     const discount = security.discountFromCoupon(basket.coupon)
     challengeUtils.solveIf(challenges.forgedCouponChallenge, () => { return discount >= 80 })
