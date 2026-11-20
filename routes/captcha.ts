@@ -4,7 +4,6 @@
  */
 
 import { type Request, type Response, type NextFunction } from 'express'
-import { type Captcha } from '../data/types'
 import { CaptchaModel } from '../models/captcha'
 
 function captchas () {
@@ -34,8 +33,13 @@ function captchas () {
 }
 
 captchas.verifyCaptcha = () => (req: Request, res: Response, next: NextFunction) => {
-  CaptchaModel.findOne({ where: { captchaId: req.body.captchaId } }).then((captcha: Captcha | null) => {
-    if ((captcha != null) && req.body.captcha === captcha.answer) {
+  CaptchaModel.destroy({
+    where: {
+      captchaId: req.body.captchaId,
+      answer: req.body.captcha
+    }
+  }).then((deletedCount: number) => {
+    if (deletedCount === 1) {
       next()
     } else {
       res.status(401).send(res.__('Wrong answer to CAPTCHA. Please try again.'))

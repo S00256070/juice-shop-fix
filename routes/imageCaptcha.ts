@@ -41,8 +41,23 @@ imageCaptchas.verifyCaptcha = () => (req: Request, res: Response, next: NextFunc
     },
     order: [['createdAt', 'DESC']]
   }).then(captchas => {
-    if (!captchas[0] || req.body.answer === captchas[0].answer) {
+    if (!captchas[0]) {
       next()
+    } else if (req.body.answer === captchas[0].answer) {
+      void ImageCaptchaModel.destroy({
+        where: {
+          id: captchas[0].id,
+          answer: req.body.answer
+        }
+      }).then(deletedCount => {
+        if (deletedCount === 1) {
+          next()
+        } else {
+          res.status(401).send(res.__('Wrong answer to CAPTCHA. Please try again.'))
+        }
+      }).catch(() => {
+        res.status(401).send(res.__('Something went wrong while submitting CAPTCHA. Please try again.'))
+      })
     } else {
       res.status(401).send(res.__('Wrong answer to CAPTCHA. Please try again.'))
     }
